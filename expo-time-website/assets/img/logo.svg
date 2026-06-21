@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 86" role="img" aria-label="Expo Time">
+  <style>
+    .wm { font-family: 'Poppins', 'Segoe UI', sans-serif; font-weight: 700; }
+  </style>
+  <!-- wordmark -->
+  <text x="0" y="52" class="wm" font-size="56" fill="#293d50" letter-spacing="-1">e</text>
+  <!-- checkmark forming the "x" -->
+  <path d="M30 50 L41 62 L70 18" fill="none" stroke="#f3c716" stroke-width="11"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="58" y="52" class="wm" font-size="56" fill="#293d50" letter-spacing="-1">potime</text>
+  <!-- tagline -->
+  <text x="62" y="76" font-family="'Poppins',sans-serif" font-weight="500"
+        font-size="16" fill="#f3c716" letter-spacing="2">Event Organizer</text>
+</svg>
