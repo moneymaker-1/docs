@@ -59,11 +59,12 @@
   <main id="main">
     <!-- ===== Hero ===== -->
     <section class="hero" id="hero">
-      <div class="hero-bg" aria-hidden="true">
-        <span class="blob blob-1"></span>
-        <span class="blob blob-2"></span>
-        <span class="grid-pattern"></span>
+      <!-- Full-bleed interactive 3D exhibition stand -->
+      <div class="hero3d" id="hero3d" aria-hidden="true">
+        <canvas class="hero3d-canvas"></canvas>
       </div>
+      <div class="hero-scrim" aria-hidden="true"></div>
+
       <div class="container hero-inner">
         <div class="hero-copy">
           <p class="eyebrow" data-en="Event Organizer · Exhibition House" data-ar="منظّم فعاليات · بيت المعارض">Event Organizer · Exhibition House</p>
@@ -88,21 +89,9 @@
             <span data-en="22 major exhibitions" data-ar="22 معرضاً كبيراً">22 major exhibitions</span>
           </div>
         </div>
-
-        <div class="hero-visual">
-          <div class="check-card" id="hero3d">
-            <canvas class="hero3d-canvas" aria-hidden="true"></canvas>
-            <svg viewBox="0 0 200 200" class="check-mark fallback-check" aria-hidden="true">
-              <path d="M40 108 L86 150 L165 46" fill="none" stroke="#f3c716"
-                    stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <span class="float-chip chip-1" data-en="Exhibitions" data-ar="معارض">Exhibitions</span>
-            <span class="float-chip chip-2" data-en="Conferences" data-ar="مؤتمرات">Conferences</span>
-            <span class="float-chip chip-3" data-en="3D Stands" data-ar="أجنحة ثلاثية الأبعاد">3D Stands</span>
-          </div>
-          <p class="hero3d-hint" aria-hidden="true" data-en="Move your cursor to explore" data-ar="حرّك المؤشر للاستكشاف">Move your cursor to explore</p>
-        </div>
       </div>
+
+      <p class="hero3d-hint" aria-hidden="true" data-en="Drag to rotate the stand" data-ar="اسحب لتدوير الجناح">Drag to rotate the stand</p>
     </section>
 
     <!-- ===== Stats ===== -->
@@ -238,7 +227,7 @@
         <div class="section-head center">
           <p class="section-eyebrow" data-en="Selected work" data-ar="مختارات من أعمالنا">Selected work</p>
           <h2 class="section-title" data-en="Our Projects" data-ar="أعمالنا">Our Projects</h2>
-          <p class="section-sub" data-en="A glimpse of the stands and events we bring to life. Replace these placeholders with your own photos." data-ar="لمحة من الأجنحة والفعاليات التي ننفّذها. استبدل هذه الصور التوضيحية بصور أعمالك.">A glimpse of the stands and events we bring to life. Replace these placeholders with your own photos.</p>
+          <p class="section-sub" data-en="A glimpse of the stands and experiences we design and build." data-ar="لمحة من الأجنحة والتجارب التي نصمّمها وننفّذها.">A glimpse of the stands and experiences we design and build.</p>
         </div>
         <div class="projects-grid" id="projectsGrid"><!-- injected by JS --></div>
       </div>

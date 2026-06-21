@@ -67,14 +67,14 @@
     });
   }
 
-  /* ---------- Build project placeholder tiles ---------- */
+  /* ---------- Build project tiles from real stand renders ---------- */
   var PROJECTS = [
-    { en: ["Exhibition Stand", "Build"], ar: ["جناح معرض", "تنفيذ"] },
-    { en: ["Corporate Conference", "Event"], ar: ["مؤتمر مؤسسي", "فعالية"] },
-    { en: ["Product Launch", "Activation"], ar: ["إطلاق منتج", "تفعيل"] },
-    { en: ["Trade Show Pavilion", "Design"], ar: ["جناح معرض تجاري", "تصميم"] },
-    { en: ["Gala & Awards Night", "Event"], ar: ["حفل وجوائز", "فعالية"] },
-    { en: ["Custom 3D Booth", "3D"], ar: ["جناح ثلاثي الأبعاد", "ثري دي"] }
+    { img: "assets/img/projects/stand-02.jpg", en: ["Rawaf Mina — Main Facade", "Stand"], ar: ["رواف منى — الواجهة الرئيسية", "جناح"] },
+    { img: "assets/img/projects/stand-01.jpg", en: ["Rawaf Mina — Front Elevation", "Design"], ar: ["رواف منى — الواجهة الأمامية", "تصميم"] },
+    { img: "assets/img/projects/stand-05.jpg", en: ["Rawaf Mina — Double-Deck Booth", "3D"], ar: ["رواف منى — جناح بطابقين", "ثري دي"] },
+    { img: "assets/img/projects/stand-03.jpg", en: ["Rawaf Mina — Hospitality Lounge", "Build"], ar: ["رواف منى — صالة الضيافة", "تنفيذ"] },
+    { img: "assets/img/projects/stand-04.jpg", en: ["Rawaf Mina — Reception & Stairs", "Interior"], ar: ["رواف منى — الاستقبال والدرج", "تصميم داخلي"] },
+    { img: "assets/img/projects/stand-01.jpg", en: ["Rawaf Mina — Aerial View", "Exhibition"], ar: ["رواف منى — منظور علوي", "معرض"] }
   ];
   var pGrid = document.getElementById("projectsGrid");
   if (pGrid) {
@@ -82,7 +82,7 @@
       var tile = document.createElement("article");
       tile.className = "project-tile reveal";
       tile.innerHTML =
-        '<svg class="pt-check" viewBox="0 0 100 100" fill="none" stroke="#f3c716" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"><path d="M22 54 L42 74 L80 26"/></svg>' +
+        '<img src="' + p.img + '" alt="' + p.en[0] + '" loading="lazy" decoding="async" />' +
         '<div class="pt-label"><span data-en="' + p.en[0] + '" data-ar="' + p.ar[0] + '">' + p.en[0] + "</span>" +
         '<span class="pt-tag" data-en="' + p.en[1] + '" data-ar="' + p.ar[1] + '">' + p.en[1] + "</span></div>";
       pGrid.appendChild(tile);

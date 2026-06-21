@@ -1,229 +1,323 @@
 /* =====================================================================
-   Expo Time — Hero 3D scene (Three.js, classic script using global THREE)
-   An extruded brand checkmark + floating exhibition "stands",
-   brand-coloured lighting and mouse-driven parallax.
-   Gracefully does nothing if WebGL / Three.js is unavailable.
+   Expo Time — Full-bleed interactive 3D exhibition stand (Three.js)
+   A stylised exhibition booth inspired by the Rawaf Mina design:
+   curved white canopy, logo wall, LED screens, patterned columns,
+   reception desk, upper deck, lounge furniture and plants.
+   Drag to orbit; auto-rotates when idle. Classic script (global THREE).
+   Degrades to a static render image (CSS) if WebGL is unavailable.
    ===================================================================== */
 (function () {
   "use strict";
-  if (typeof THREE === "undefined") return; // three failed to load -> SVG fallback stays
+  if (typeof THREE === "undefined") return;
 
-  var BRAND = { yellow: 0xf3c716, navy: 0x293d50, cyan: 0x62b1b6, deep: 0x16222e };
+  var BRAND = { yellow: 0xf3c716, gold: 0xc9a227, navy: 0x222b3a, cyan: 0x62b1b6 };
 
   var container = document.getElementById("hero3d");
   if (container && supportsWebGL()) {
     try { init(container); } catch (e) { console.warn("3D disabled:", e); }
   }
 
-function supportsWebGL() {
-  try {
-    const c = document.createElement("canvas");
-    return !!(window.WebGLRenderingContext && (c.getContext("webgl") || c.getContext("experimental-webgl")));
-  } catch (e) { return false; }
-}
-
-function init(container) {
-  const canvas = container.querySelector(".hero3d-canvas");
-  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-  const scene = new THREE.Scene();
-
-  const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
-  camera.position.set(0, 0.4, 10);
-
-  const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
-
-  /* ---------- Lighting ---------- */
-  scene.add(new THREE.AmbientLight(0xffffff, 0.5));
-  scene.add(new THREE.HemisphereLight(0xbfe6ea, BRAND.deep, 0.45));
-
-  const key = new THREE.DirectionalLight(0xffffff, 1.4);
-  key.position.set(5, 8, 6);
-  key.castShadow = true;
-  key.shadow.mapSize.set(1024, 1024);
-  key.shadow.camera.near = 1; key.shadow.camera.far = 30;
-  key.shadow.camera.left = -8; key.shadow.camera.right = 8;
-  key.shadow.camera.top = 8; key.shadow.camera.bottom = -8;
-  key.shadow.bias = -0.0005;
-  scene.add(key);
-
-  const glow = new THREE.PointLight(BRAND.yellow, 1.2, 40);
-  glow.position.set(-5, 1, 5);
-  scene.add(glow);
-
-  const rim = new THREE.PointLight(BRAND.cyan, 1.0, 40);
-  rim.position.set(6, -2, -3);
-  scene.add(rim);
-
-  /* ---------- Shadow-catching ground ---------- */
-  const ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(60, 60),
-    new THREE.ShadowMaterial({ opacity: 0.28 })
-  );
-  ground.rotation.x = -Math.PI / 2;
-  ground.position.y = -3;
-  ground.receiveShadow = true;
-  scene.add(ground);
-
-  /* ---------- The 3D checkmark ---------- */
-  const world = new THREE.Group();
-  scene.add(world);
-
-  const checkMat = new THREE.MeshStandardMaterial({
-    color: BRAND.yellow, metalness: 0.5, roughness: 0.28
-  });
-
-  const check = buildCheck(checkMat);
-  check.position.set(-0.2, 0.3, 0);
-  world.add(check);
-
-  /* ---------- Floating exhibition "stands" ---------- */
-  const stands = [];
-  const standDefs = [
-    { c: BRAND.navy, s: [1.4, 1.4, 1.4], p: [-3.4, 1.7, -1.5] },
-    { c: BRAND.cyan, s: [1.1, 1.8, 1.1], p: [3.5, -1.4, -1] },
-    { c: BRAND.navy, s: [1.0, 1.0, 1.0], p: [3.0, 2.2, -2.5] },
-    { c: BRAND.cyan, s: [0.9, 0.9, 0.9], p: [-3.2, -1.9, -2] }
-  ];
-  standDefs.forEach(function (d) {
-    const geo = new THREE.BoxGeometry(d.s[0], d.s[1], d.s[2], 1, 1, 1);
-    const mat = new THREE.MeshStandardMaterial({ color: d.c, metalness: 0.25, roughness: 0.55 });
-    const m = new THREE.Mesh(geo, mat);
-    m.position.set(d.p[0], d.p[1], d.p[2]);
-    m.rotation.set(Math.random() * 0.6, Math.random() * 0.8, 0);
-    m.castShadow = true; m.receiveShadow = true;
-    m.userData.baseY = d.p[1];
-    m.userData.spin = (Math.random() * 0.4 + 0.2) * (Math.random() > 0.5 ? 1 : -1);
-    m.userData.phase = Math.random() * Math.PI * 2;
-    world.add(m);
-    stands.push(m);
-  });
-
-  /* ---------- Ambient particles ---------- */
-  const pCount = 90;
-  const pPos = new Float32Array(pCount * 3);
-  for (let i = 0; i < pCount; i++) {
-    pPos[i * 3]     = (Math.random() - 0.5) * 16;
-    pPos[i * 3 + 1] = (Math.random() - 0.5) * 12;
-    pPos[i * 3 + 2] = (Math.random() - 0.5) * 10 - 2;
+  function supportsWebGL() {
+    try {
+      var c = document.createElement("canvas");
+      return !!(window.WebGLRenderingContext && (c.getContext("webgl") || c.getContext("experimental-webgl")));
+    } catch (e) { return false; }
   }
-  const pGeo = new THREE.BufferGeometry();
-  pGeo.setAttribute("position", new THREE.BufferAttribute(pPos, 3));
-  const particles = new THREE.Points(pGeo, new THREE.PointsMaterial({
-    color: 0xffffff, size: 0.05, transparent: true, opacity: 0.5, depthWrite: false
-  }));
-  world.add(particles);
 
-  /* ---------- Pointer parallax ---------- */
-  const pointer = { x: 0, y: 0, tx: 0, ty: 0 };
-  function onPointer(e) {
-    const r = container.getBoundingClientRect();
-    pointer.tx = ((e.clientX - r.left) / r.width - 0.5) * 2;
-    pointer.ty = ((e.clientY - r.top) / r.height - 0.5) * 2;
+  /* ---------------- Canvas-drawn textures ---------------- */
+  function tex(draw, w, h) {
+    var c = document.createElement("canvas"); c.width = w; c.height = h;
+    draw(c.getContext("2d"), w, h);
+    var t = new THREE.CanvasTexture(c); t.anisotropy = 4; return t;
   }
-  window.addEventListener("pointermove", onPointer, { passive: true });
-  window.addEventListener("deviceorientation", function (e) {
-    if (e.gamma == null) return;
-    pointer.tx = Math.max(-1, Math.min(1, e.gamma / 30));
-    pointer.ty = Math.max(-1, Math.min(1, ((e.beta || 0) - 45) / 30));
-  });
-
-  /* ---------- Sizing ---------- */
-  function resize() {
-    const w = container.clientWidth || 1;
-    const h = container.clientHeight || 1;
-    renderer.setSize(w, h, false);
-    camera.aspect = w / h;
-    camera.updateProjectionMatrix();
+  function patternTexture() {
+    return tex(function (x, w, h) {
+      x.fillStyle = "#ffffff"; x.fillRect(0, 0, w, h);
+      var n = 9;
+      for (var i = 0; i < n; i++) {
+        var cy = h / n * (i + 0.5);
+        x.save(); x.translate(w / 2, cy); x.rotate(Math.PI / 4);
+        x.fillStyle = i % 2 ? "#c9a227" : "#62b1b6"; x.fillRect(-18, -18, 36, 36);
+        x.restore();
+        x.fillStyle = i % 2 ? "#62b1b6" : "#c9a227";
+        x.beginPath(); x.arc(w * 0.22, cy, 5, 0, 7); x.fill();
+        x.beginPath(); x.arc(w * 0.78, cy, 5, 0, 7); x.fill();
+      }
+    }, 128, 512);
   }
-  resize();
-  if ("ResizeObserver" in window) new ResizeObserver(resize).observe(container);
-  else window.addEventListener("resize", resize);
+  function logoTexture() {
+    return tex(function (x, w, h) {
+      x.clearRect(0, 0, w, h);
+      x.fillStyle = "#ffffff"; x.textAlign = "center"; x.textBaseline = "middle";
+      x.font = "800 96px Poppins, Arial, sans-serif";
+      x.fillText("RAWAF", w / 2, h * 0.4);
+      x.fillStyle = "#c9cfd6"; x.font = "600 30px Poppins, Arial, sans-serif";
+      x.fillText("R A W A F   M I N A", w / 2, h * 0.72);
+    }, 512, 220);
+  }
+  function screenTexture() {
+    return tex(function (x, w, h) {
+      var g = x.createLinearGradient(0, 0, w, h);
+      g.addColorStop(0, "#0a3f8c"); g.addColorStop(0.5, "#1565d8"); g.addColorStop(1, "#0a2747");
+      x.fillStyle = g; x.fillRect(0, 0, w, h);
+      x.globalAlpha = 0.16; x.fillStyle = "#cfe8ff";
+      for (var i = 0; i < 5; i++) { x.save(); x.translate(36 + i * 52, h / 2); x.rotate(-0.5); x.fillRect(-7, -h, 14, h * 2); x.restore(); }
+      x.globalAlpha = 1;
+    }, 256, 360);
+  }
+  function welcomeTexture() {
+    return tex(function (x, w, h) {
+      x.clearRect(0, 0, w, h);
+      x.fillStyle = "#ffffff"; x.textAlign = "center"; x.textBaseline = "middle";
+      x.font = "700 60px Poppins, Arial, sans-serif";
+      x.fillText("WELCOME", w / 2, h / 2);
+    }, 512, 128);
+  }
 
-  container.classList.add("has-3d");
+  /* ---------------- Scene ---------------- */
+  function init(container) {
+    var canvas = container.querySelector(".hero3d-canvas");
+    var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  /* ---------- Render loop (paused when off-screen / tab hidden) ---------- */
-  const clock = new THREE.Clock();
-  let running = true, rafId = null;
+    var scene = new THREE.Scene();
+    var camera = new THREE.PerspectiveCamera(40, 1, 0.1, 200);
 
-  function frame() {
-    if (!running) return;
-    rafId = requestAnimationFrame(frame);
-    const t = clock.getElapsedTime();
+    var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-    pointer.x += (pointer.tx - pointer.x) * 0.06;
-    pointer.y += (pointer.ty - pointer.y) * 0.06;
+    /* Lighting */
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    scene.add(new THREE.HemisphereLight(0xcfeef2, BRAND.navy, 0.5));
+    var key = new THREE.DirectionalLight(0xffffff, 1.5);
+    key.position.set(-8, 14, 10); key.castShadow = true;
+    key.shadow.mapSize.set(2048, 2048);
+    key.shadow.camera.near = 1; key.shadow.camera.far = 60;
+    key.shadow.camera.left = -16; key.shadow.camera.right = 16;
+    key.shadow.camera.top = 16; key.shadow.camera.bottom = -16;
+    key.shadow.bias = -0.0004;
+    scene.add(key);
+    var warm = new THREE.PointLight(0xfff0d6, 0.7, 50); warm.position.set(0, 5, 3); scene.add(warm);
+    var rim = new THREE.PointLight(BRAND.cyan, 0.6, 50); rim.position.set(8, 3, -4); scene.add(rim);
 
-    if (!reduce) {
-      check.rotation.y = Math.sin(t * 0.4) * 0.45 + pointer.x * 0.5;
-      check.rotation.x = Math.cos(t * 0.35) * 0.12 - pointer.y * 0.25;
-      check.position.y = 0.3 + Math.sin(t * 1.1) * 0.14;
+    /* Materials */
+    var matWhite = new THREE.MeshStandardMaterial({ color: 0xf3f4f6, roughness: 0.55, metalness: 0.05 });
+    var matGloss = new THREE.MeshStandardMaterial({ color: 0xfbfcfd, roughness: 0.25, metalness: 0.08 });
+    var matNavy = new THREE.MeshStandardMaterial({ color: BRAND.navy, roughness: 0.7, metalness: 0.1 });
+    var matFloor = new THREE.MeshStandardMaterial({ color: 0xe9e3d6, roughness: 0.85 });
+    var matGlass = new THREE.MeshStandardMaterial({ color: 0x9fd6da, roughness: 0.1, metalness: 0, transparent: true, opacity: 0.22 });
+    var matScreen = new THREE.MeshBasicMaterial({ map: screenTexture() });
+    var matPattern = new THREE.MeshStandardMaterial({ map: patternTexture(), roughness: 0.6 });
+    var matPlant = new THREE.MeshStandardMaterial({ color: 0x3f7d4f, roughness: 0.8 });
 
-      stands.forEach(function (m) {
-        m.position.y = m.userData.baseY + Math.sin(t * 0.8 + m.userData.phase) * 0.28;
-        m.rotation.y += m.userData.spin * 0.01;
-        m.rotation.x += m.userData.spin * 0.004;
-      });
-      particles.rotation.y = t * 0.03;
-    } else {
-      check.rotation.y = pointer.x * 0.5;
-      check.rotation.x = -pointer.y * 0.25;
+    var booth = new THREE.Group();
+    scene.add(booth);
+
+    function box(w, h, d, mat, x, y, z, cast) {
+      var m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+      m.position.set(x, y, z);
+      m.castShadow = cast !== false; m.receiveShadow = true;
+      booth.add(m); return m;
+    }
+    function plane(w, h, mat, x, y, z, ry) {
+      var m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
+      m.position.set(x, y, z); if (ry) m.rotation.y = ry;
+      booth.add(m); return m;
     }
 
-    world.rotation.y = pointer.x * 0.18;
-    world.rotation.x = pointer.y * 0.10;
+    /* Floor platform */
+    box(15, 0.3, 9, matFloor, 0, -0.15, 0).castShadow = false;
+    var carpet = box(13.5, 0.06, 7.6, new THREE.MeshStandardMaterial({ color: 0xf6f3ec, roughness: 0.9 }), 0, 0.03, 0.4, false);
+    carpet.receiveShadow = true;
 
-    camera.position.x += (pointer.x * 0.8 - camera.position.x) * 0.05;
-    camera.position.y += (0.4 - pointer.y * 0.6 - camera.position.y) * 0.05;
-    camera.lookAt(0, 0, 0);
+    /* Back & side walls */
+    box(15, 6.4, 0.25, matNavy, 0, 3.2, -4.3);
+    box(0.25, 6.4, 9, matWhite, -7.4, 3.2, 0);          // left wall
+    box(7.4, 6.6, 0.3, matWhite, -3.7, 3.3, -4.15);     // white frame over left/back
 
-    renderer.render(scene, camera);
+    /* Logo sign on back wall */
+    var sign = box(4.2, 1.4, 0.18, matNavy, 2.4, 4.8, -4.15);
+    plane(3.6, 1.2, new THREE.MeshBasicMaterial({ map: logoTexture(), transparent: true }), 2.4, 4.8, -4.04);
+
+    /* Top canopy: roof + curved front fascia */
+    box(15, 0.25, 8.4, matWhite, 0, 6.15, -0.1, true).castShadow = true;       // ceiling
+    var fascia = box(15, 0.85, 1.0, matGloss, 0, 5.85, 3.6);                    // front beam
+    // rounded front lip of the fascia
+    var lip = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 15, 24, 1, false, 0, Math.PI),
+      matGloss);
+    lip.rotation.z = Math.PI / 2; lip.rotation.y = Math.PI; lip.position.set(0, 5.85, 4.1);
+    lip.castShadow = true; booth.add(lip);
+
+    /* Recessed light strip + downlights under canopy */
+    var strip = new THREE.Mesh(new THREE.BoxGeometry(13.5, 0.05, 0.5),
+      new THREE.MeshBasicMaterial({ color: 0xfff6df }));
+    strip.position.set(0, 6.0, 3.0); booth.add(strip);
+    for (var d = 0; d < 9; d++) {
+      var dot = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8),
+        new THREE.MeshBasicMaterial({ color: 0xfff3d0 }));
+      dot.position.set(-6 + d * 1.5, 5.98, 1.2); booth.add(dot);
+    }
+
+    /* Signature curved white swoosh (front-left sculptural element) */
+    var curve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(-1.0, 5.2, 3.4),
+      new THREE.Vector3(-1.8, 4.0, 3.2),
+      new THREE.Vector3(-0.7, 2.7, 3.4),
+      new THREE.Vector3(-2.3, 1.3, 3.5),
+      new THREE.Vector3(-2.4, 0.1, 3.3)
+    ]);
+    var swoosh = new THREE.Mesh(new THREE.TubeGeometry(curve, 60, 0.42, 16, false), matGloss);
+    swoosh.castShadow = true; booth.add(swoosh);
+    // slim vertical louvres behind the swoosh
+    for (var l = 0; l < 12; l++) {
+      var lo = box(0.06, 4.6, 0.06, matNavy, -0.2 + l * 0.18, 3.0, 3.0, true);
+      lo.castShadow = false;
+    }
+
+    /* Upper deck (two-story, left) with glass railing */
+    box(5.4, 0.2, 6.2, matWhite, -4.4, 3.05, -0.6);
+    plane(5.2, 1.0, matGlass, -4.4, 3.6, 2.45);
+    box(5.2, 0.06, 0.06, matWhite, -4.4, 4.1, 2.45);   // rail cap
+    // glass meeting room walls upstairs
+    plane(5.0, 2.4, matGlass, -4.4, 4.45, 2.4);
+    plane(6.0, 2.4, matGlass, -7.25, 4.45, -0.6, Math.PI / 2);
+
+    /* Patterned columns */
+    [-3.0, 5.6].forEach(function (cx) {
+      box(0.55, 5.6, 0.55, matWhite, cx, 2.8, 3.2, true);
+      plane(0.5, 4.4, matPattern, cx, 2.8, 3.49);
+    });
+    // a patterned panel on the back wall too
+    plane(1.0, 4.0, matPattern, -1.4, 2.6, -4.0);
+
+    /* LED screens */
+    function screen(w, h, x, y, z, ry) {
+      var frame = box(w + 0.12, h + 0.12, 0.12, matNavy, x, y, z, true);
+      if (ry) frame.rotation.y = ry;
+      var sc = plane(w, h, matScreen, x, y, z + (ry ? 0 : 0.08), ry);
+      if (ry) { sc.position.x += Math.cos(ry) * 0.08; sc.position.z -= Math.sin(ry) * 0.08; }
+    }
+    screen(1.9, 2.9, 4.3, 2.6, -4.1);
+    screen(1.7, 2.4, 6.6, 2.2, 1.0, -Math.PI / 2.3);
+    screen(1.4, 2.0, -5.6, 1.8, 2.0);
+
+    /* Reception desk */
+    box(2.6, 1.0, 1.1, matWhite, 0, 0.5, 2.4);
+    box(2.8, 0.12, 1.25, matNavy, 0, 1.06, 2.4);
+    plane(2.3, 0.42, new THREE.MeshBasicMaterial({ map: welcomeTexture(), transparent: true }), 0, 0.56, 2.96);
+
+    /* Furniture helpers */
+    function sofa(x, z, ry) {
+      var g = new THREE.Group();
+      var seat = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.45, 0.95), matGloss);
+      seat.position.y = 0.35; seat.castShadow = true; seat.receiveShadow = true;
+      var back = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.6, 0.22), matGloss);
+      back.position.set(0, 0.7, -0.37); back.castShadow = true;
+      g.add(seat, back); g.position.set(x, 0.06, z); g.rotation.y = ry || 0;
+      booth.add(g);
+    }
+    function chair(x, z) {
+      var seat = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.24, 0.12, 16), matGloss);
+      seat.position.set(x, 0.5, z); seat.castShadow = true; booth.add(seat);
+      var back = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.08), matGloss);
+      back.position.set(x, 0.78, z - 0.24); back.castShadow = true; booth.add(back);
+      var leg = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.45, 8), matNavy);
+      leg.position.set(x, 0.25, z); booth.add(leg);
+    }
+    function table(x, z) {
+      var top = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.06, 24), matNavy);
+      top.position.set(x, 0.55, z); top.castShadow = true; booth.add(top);
+      var leg = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.55, 10), matNavy);
+      leg.position.set(x, 0.28, z); booth.add(leg);
+    }
+    function plant(x, z) {
+      var pot = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.22, 0.45, 12),
+        new THREE.MeshStandardMaterial({ color: 0xdfdad0, roughness: 0.9 }));
+      pot.position.set(x, 0.27, z); pot.castShadow = true; booth.add(pot);
+      var bush = new THREE.Mesh(new THREE.IcosahedronGeometry(0.55, 1), matPlant);
+      bush.position.set(x, 0.95, z); bush.scale.y = 1.3; bush.castShadow = true; booth.add(bush);
+    }
+
+    sofa(5.4, 2.4, -0.15);
+    sofa(3.3, 3.0, 0.1);
+    table(4.2, 1.4);
+    chair(-4.6, 1.6); chair(-3.6, 1.6); table(-4.1, 1.0);
+    plant(-6.4, 3.0); plant(6.6, 3.0); plant(1.7, -3.6); plant(-2.6, 1.2);
+
+    /* Center & ground the booth */
+    var bbox = new THREE.Box3().setFromObject(booth);
+    var center = bbox.getCenter(new THREE.Vector3());
+    booth.position.x -= center.x;
+    booth.position.z -= center.z;
+
+    /* Soft contact shadow on the gradient backdrop */
+    var ground = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.ShadowMaterial({ opacity: 0.25 }));
+    ground.rotation.x = -Math.PI / 2; ground.position.y = -0.02; ground.receiveShadow = true; scene.add(ground);
+
+    /* ---------------- Orbit camera ---------------- */
+    var target = new THREE.Vector3(0, 2.5, 0);
+    var sph = { r: 21, theta: 0.78, phi: 1.40 };
+    function updateTarget() {
+      var w = container.clientWidth || 1;
+      target.x = w > 1040 ? -3.2 : (w > 760 ? -1.4 : 0);   // push booth to the right on wide screens
+      sph.r = w > 1040 ? 21 : (w > 760 ? 24 : 28);
+    }
+    function applyCamera() {
+      var sp = Math.sin(sph.phi);
+      camera.position.set(
+        target.x + sph.r * sp * Math.sin(sph.theta),
+        target.y + sph.r * Math.cos(sph.phi),
+        target.z + sph.r * sp * Math.cos(sph.theta)
+      );
+      camera.lookAt(target);
+    }
+
+    /* Drag to orbit */
+    var dragging = false, lastX = 0, lastY = 0;
+    canvas.style.cursor = "grab";
+    canvas.addEventListener("pointerdown", function (e) {
+      dragging = true; lastX = e.clientX; lastY = e.clientY;
+      canvas.style.cursor = "grabbing"; canvas.setPointerCapture && canvas.setPointerCapture(e.pointerId);
+    });
+    window.addEventListener("pointermove", function (e) {
+      if (!dragging) return;
+      sph.theta -= (e.clientX - lastX) * 0.005;
+      sph.phi = Math.max(0.6, Math.min(1.5, sph.phi - (e.clientY - lastY) * 0.005));
+      lastX = e.clientX; lastY = e.clientY;
+    });
+    window.addEventListener("pointerup", function () { dragging = false; canvas.style.cursor = "grab"; });
+
+    /* Sizing */
+    function resize() {
+      var w = container.clientWidth || 1, h = container.clientHeight || 1;
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h; camera.updateProjectionMatrix();
+      updateTarget();
+    }
+    resize();
+    if ("ResizeObserver" in window) new ResizeObserver(resize).observe(container);
+    else window.addEventListener("resize", resize);
+
+    container.classList.add("has-3d");
+
+    /* Render loop */
+    var running = true, rafId = null;
+    function frame() {
+      if (!running) return;
+      rafId = requestAnimationFrame(frame);
+      if (!dragging && !reduce) sph.theta += 0.0016;
+      applyCamera();
+      renderer.render(scene, camera);
+    }
+    function start() { if (!running) { running = true; frame(); } }
+    function stop() { running = false; if (rafId) cancelAnimationFrame(rafId); }
+    document.addEventListener("visibilitychange", function () { document.hidden ? stop() : start(); });
+    if ("IntersectionObserver" in window) {
+      new IntersectionObserver(function (es) { es.forEach(function (en) { en.isIntersecting ? start() : stop(); }); },
+        { threshold: 0.01 }).observe(container);
+    }
+    frame();
   }
-
-  function start() { if (!running) { running = true; clock.start(); frame(); } }
-  function stop() { running = false; if (rafId) cancelAnimationFrame(rafId); }
-
-  document.addEventListener("visibilitychange", function () {
-    if (document.hidden) stop(); else start();
-  });
-  if ("IntersectionObserver" in window) {
-    new IntersectionObserver(function (entries) {
-      entries.forEach(function (en) { en.isIntersecting ? start() : stop(); });
-    }, { threshold: 0.01 }).observe(container);
-  }
-
-  frame();
-}
-
-/* ---------- Build an extruded checkmark from a 2D shape ---------- */
-function buildCheck(material) {
-  const w = 0.92; // stroke half-width
-  // Outline of a tick drawn counter-clockwise (x right, y up)
-  const pts = [
-    [-2.7,  0.55], [-1.15, -0.95], [ 2.15,  2.5],
-    [ 3.05,  1.65], [-1.15, -2.75], [-3.6,  -0.35]
-  ];
-  const shape = new THREE.Shape();
-  shape.moveTo(pts[0][0], pts[0][1]);
-  for (let i = 1; i < pts.length; i++) shape.lineTo(pts[i][0], pts[i][1]);
-  shape.closePath();
-
-  const geo = new THREE.ExtrudeGeometry(shape, {
-    depth: 1.1, bevelEnabled: true, bevelThickness: 0.18,
-    bevelSize: 0.18, bevelSegments: 4, curveSegments: 6
-  });
-  geo.center();
-
-  const mesh = new THREE.Mesh(geo, material);
-  mesh.castShadow = true; mesh.receiveShadow = true;
-
-  const group = new THREE.Group();
-  group.add(mesh);
-  group.scale.setScalar(1.05);
-  return group;
-}
 })();
