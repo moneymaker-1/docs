@@ -89,9 +89,10 @@
           </div>
         </div>
 
-        <div class="hero-visual" aria-hidden="true">
-          <div class="check-card">
-            <svg viewBox="0 0 200 200" class="check-mark">
+        <div class="hero-visual">
+          <div class="check-card" id="hero3d">
+            <canvas class="hero3d-canvas" aria-hidden="true"></canvas>
+            <svg viewBox="0 0 200 200" class="check-mark fallback-check" aria-hidden="true">
               <path d="M40 108 L86 150 L165 46" fill="none" stroke="#f3c716"
                     stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
@@ -99,6 +100,7 @@
             <span class="float-chip chip-2" data-en="Conferences" data-ar="مؤتمرات">Conferences</span>
             <span class="float-chip chip-3" data-en="3D Stands" data-ar="أجنحة ثلاثية الأبعاد">3D Stands</span>
           </div>
+          <p class="hero3d-hint" aria-hidden="true" data-en="Move your cursor to explore" data-ar="حرّك المؤشر للاستكشاف">Move your cursor to explore</p>
         </div>
       </div>
     </section>
@@ -343,5 +345,10 @@
   </footer>
 
   <script src="assets/js/main.js"></script>
+
+  <!-- 3D scene (Three.js, vendored locally). Works from file:// or a server.
+       Falls back to the SVG checkmark if WebGL is unavailable. -->
+  <script src="assets/vendor/three.min.js"></script>
+  <script src="assets/js/scene3d.js"></script>
 </body>
 </html>

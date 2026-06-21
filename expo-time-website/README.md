@@ -15,6 +15,13 @@ Hero · Stats · About · Services (all 9) · Values · Vision & Goals · Why Us
 Projects gallery · Call-to-action · Contact (with form) · Footer.
 
 ## Features
+- **Interactive 3D hero (WebGL / Three.js):** an extruded brand checkmark with
+  floating exhibition "stands", brand-coloured lighting, ambient particles and
+  mouse / device-tilt parallax. Three.js is **vendored locally** in
+  `assets/vendor/three.min.js` (no CDN dependency) and works straight from
+  `file://` or a server. Falls back to the flat SVG checkmark if WebGL is off.
+- **3D tilt interactions** on the service cards and project tiles (perspective +
+  glare), on fine-pointer devices.
 - **Language toggle (EN ⇄ AR)** with full right-to-left layout; preference saved in `localStorage`.
 - Fully **responsive** (desktop / tablet / mobile) with a mobile nav drawer.
 - Scroll animations, animated stat counters, sticky header, accessible focus states,

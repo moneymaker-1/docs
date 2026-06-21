@@ -252,6 +252,40 @@
     });
   }
 
+  /* ---------- 3D tilt on cards (fine pointers only, respects reduced motion) ---------- */
+  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var finePointer = window.matchMedia("(pointer: fine)").matches;
+
+  function addTilt(el, max) {
+    el.classList.add("tilt");
+    var glare = document.createElement("span");
+    glare.className = "tilt-glare";
+    el.appendChild(glare);
+    var rect = null;
+
+    el.addEventListener("pointerenter", function () { rect = el.getBoundingClientRect(); el.style.transitionDuration = "60ms"; });
+    el.addEventListener("pointermove", function (e) {
+      if (!rect) rect = el.getBoundingClientRect();
+      var px = (e.clientX - rect.left) / rect.width;
+      var py = (e.clientY - rect.top) / rect.height;
+      var ry = (px - 0.5) * max * 2;
+      var rx = (0.5 - py) * max * 2;
+      el.style.transform = "rotateX(" + rx.toFixed(2) + "deg) rotateY(" + ry.toFixed(2) + "deg) translateY(-6px)";
+      glare.style.setProperty("--gx", (px * 100).toFixed(1) + "%");
+      glare.style.setProperty("--gy", (py * 100).toFixed(1) + "%");
+    });
+    el.addEventListener("pointerleave", function () {
+      el.style.transitionDuration = "";
+      el.style.transform = "";
+      rect = null;
+    });
+  }
+
+  if (finePointer && !reduceMotion) {
+    document.querySelectorAll(".service-card").forEach(function (c) { addTilt(c, 7); });
+    document.querySelectorAll(".project-tile").forEach(function (c) { addTilt(c, 6); });
+  }
+
   /* ---------- Year ---------- */
   var y = document.getElementById("year");
   if (y) y.textContent = new Date().getFullYear();

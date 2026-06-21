@@ -145,22 +145,37 @@ button { font-family: inherit; cursor: pointer; border: 0; background: none; }
 .hero-trust { display: flex; flex-wrap: wrap; align-items: center; gap: .7rem; color: var(--muted); font-size: .9rem; font-weight: 500; }
 .hero-trust .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--yellow); }
 
-/* Hero visual — checkmark */
+/* Hero visual — checkmark / 3D scene */
 .hero-visual { display: grid; place-items: center; }
 .check-card {
-  position: relative; width: min(360px, 80%); aspect-ratio: 1; border-radius: var(--radius-lg);
-  background: linear-gradient(160deg, var(--navy), var(--navy-900));
-  box-shadow: var(--shadow-lg); display: grid; place-items: center;
+  position: relative; width: min(420px, 92%); aspect-ratio: 1; border-radius: var(--radius-lg);
+  background: radial-gradient(120% 120% at 30% 20%, #34506b 0%, var(--navy) 45%, var(--navy-900) 100%);
+  box-shadow: var(--shadow-lg); display: grid; place-items: center; overflow: hidden;
 }
 .check-card::after {
   content: ""; position: absolute; inset: 14px; border-radius: calc(var(--radius-lg) - 8px);
-  border: 1px solid rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.08); z-index: 2; pointer-events: none;
 }
-.check-mark { width: 62%; animation: drawIn 1s var(--ease) both; }
+.hero3d-canvas {
+  position: absolute; inset: 0; width: 100% !important; height: 100% !important;
+  display: block; z-index: 1; cursor: grab; touch-action: pan-y;
+}
+.check-card.has-3d .fallback-check { display: none; }
+.check-mark { width: 62%; animation: drawIn 1s var(--ease) both; position: relative; z-index: 1; }
+.hero3d-hint {
+  margin-top: 1rem; font-size: .82rem; color: var(--muted); opacity: 0; font-weight: 500;
+  display: flex; align-items: center; gap: .45rem; transition: opacity .4s var(--ease);
+}
+.check-card.has-3d ~ .hero3d-hint { opacity: 1; }
+.hero3d-hint::before {
+  content: ""; width: 16px; height: 16px; border-radius: 50%;
+  border: 2px solid var(--cyan); border-top-color: transparent; animation: spinHint 1.4s linear infinite;
+}
+@keyframes spinHint { to { transform: rotate(360deg); } }
 .float-chip {
-  position: absolute; background: #fff; color: var(--navy); font-weight: 600; font-size: .82rem;
+  position: absolute; z-index: 3; background: #fff; color: var(--navy); font-weight: 600; font-size: .82rem;
   padding: .55rem .95rem; border-radius: 999px; box-shadow: var(--shadow-md); white-space: nowrap;
-  animation: floaty 4s ease-in-out infinite;
+  animation: floaty 4s ease-in-out infinite; pointer-events: none;
 }
 .chip-1 { top: 8%; inset-inline-start: -10%; }
 .chip-2 { bottom: 14%; inset-inline-end: -12%; animation-delay: .8s; }
@@ -324,6 +339,20 @@ button { font-family: inherit; cursor: pointer; border: 0; background: none; }
 .footer-links, .footer-contact { display: grid; gap: .6rem; align-content: start; }
 .footer-links a:hover, .footer-contact a:hover { color: var(--yellow); }
 .footer-bottom { border-top: 1px solid rgba(255,255,255,.1); padding: 1.2rem 0; font-size: .86rem; color: rgba(255,255,255,.55); }
+
+/* ---------- 3D tilt (pointer-driven) ---------- */
+.services-grid, .projects-grid { perspective: 1000px; }
+.tilt { transform-style: preserve-3d; will-change: transform; transition: transform .25s var(--ease); }
+.tilt > * { transform: translateZ(0.01px); }
+.service-card .service-icon, .service-card h3 { transform: translateZ(34px); }
+.service-card p { transform: translateZ(18px); }
+.project-tile .pt-label, .project-tile .pt-check { transform: translateZ(28px); }
+.tilt-glare {
+  position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 4;
+  background: radial-gradient(circle at var(--gx,50%) var(--gy,0%), rgba(255,255,255,.28), transparent 45%);
+  opacity: 0; transition: opacity .3s var(--ease);
+}
+.tilt:hover .tilt-glare { opacity: 1; }
 
 /* ---------- Reveal on scroll ---------- */
 .reveal { opacity: 0; transform: translateY(24px); transition: opacity .7s var(--ease), transform .7s var(--ease); }
